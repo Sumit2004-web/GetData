@@ -1,0 +1,352 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+enum AdminStatus {
+  Active @map("active")
+  @@map("admin_status")
+}
+model Admin {
+  id           Int         @id @default(autoincrement())
+  firstname    String
+  lastname     String
+  email        String      @unique
+  profileImage String?     @map("profile_image")
+  status       AdminStatus @default(Active)
+  createdAt    DateTime    @default(now()) @map("created_at")
+  updatedAt    DateTime    @updatedAt @map("updated_at")
+  meta         AdminMeta?
+  @@map("admin")
+}
+model AdminMeta {
+  passwordSalt String? @map("password_salt")
+  passwordHash String? @map("password_hash")
+  admin        Admin   @relation(fields: [adminId], references: [id])
+  adminId      Int     @unique() @map("admin_id")
+  @@map("admin_meta")
+}
+enum UserStatus {
+  Active  @map("active")
+  Blocked @map("blocked")
+  @@map("user_status")
+}
+model User {
+  id           Int           @id @default(autoincrement())
+  firstname    String
+  lastname     String
+  username     String?       @unique
+  email        String        @unique
+  dialCode     String?       @map("dial_code")
+  mobile       String?       @unique
+  profileImage String?       @map("profile_image")
+  isVerified   Boolean       @default(false) @map("is_verified")
+  country      String?
+  status       UserStatus    @default(Active)
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
+  meta         UserMeta?
+  settings     UserSetting[]
+  @@map("user")
+}
+model UserMeta {
+  googleId     String? @unique @map("google_id")
+  passwordSalt String? @map("password_salt")
+  passwordHash String? @map("password_hash")
+  user         User    @relation(fields: [userId], references: [id])
+  userId       Int     @unique() @map("user_id")
+  @@map("user_meta")
+}
+enum OtpTransport {
+  Email  @map("email")
+  Mobile @map("mobile")
+  @@map("otp_transport")
+}
+model Otp {
+  code             String
+  attempt          Int          @default(1) @db.SmallInt
+  lastSentAt       DateTime     @default(now()) @map("last_sent_at")
+  retries          Int          @default(0) @db.SmallInt
+  transport        OtpTransport
+  target           String
+  lastCodeVerified Boolean      @default(false) @map("last_code_verified")
+  blocked          Boolean      @default(false)
+  @@unique([transport, target])
+  @@map("otp")
+}
+enum SettingType {
+  Binary       @map("binary")
+  MultiSelect  @map("multi_select")
+  SingleSelect @map("single_select")
+  @@map("setting_type")
+}
+enum SettingContext {
+  User   @map("user")
+  System @map("System")
+  @@map("setting_context")
+}
+model Setting {
+  id               Int             @id @default(autoincrement())
+  mappedTo         String          @map("mapped_to")
+  text             String          @default("")
+  description      String          @default("")
+  type             SettingType
+  context          SettingContext
+  default          Json
+  isDefinedOptions Boolean         @map("is_defined_options")
+  subSettings      Setting[]       @relation("SubSettings")
+  dependsOn        Setting?        @relation("SubSettings", fields: [parentId], references: [id])
+  parentId         Int?            @map("parent_id")
+  options          SettingOption[]
+  userSettings     UserSetting[]
+  systemSettings   SystemSetting[]
+  @@unique([context, mappedTo])
+  @@map("setting")
+}
+model SettingOption {
+  id        Int     @id @default(autoincrement())
+  text      String  @default("")
+  value     String
+  setting   Setting @relation(fields: [settingId], references: [id])
+  settingId Int     @map("setting_id")
+  @@unique([settingId, value])
+  @@map("setting_option")
+}
+model UserSetting {
+  selection Json
+  user      User    @relation(fields: [userId], references: [id])
+  userId    Int     @map("user_id")
+  setting   Setting @relation(fields: [settingId], references: [id])
+  settingId Int     @map("setting_id")
+  @@id([userId, settingId])
+  @@map("user_setting")
+}
+model SystemSetting {
+  selection Json
+  setting   Setting @relation(fields: [settingId], references: [id])
+  settingId Int     @map("setting_id")
+  @@id([settingId])
+  @@map("system_setting")
+}
+model Webhook {
+  id         Int      @id @default(autoincrement())
+  serverId   String   @unique @map("server_id")
+  pendingUrl String?  @map("pending_url")
+  resultUrl  String?  @map("result_url")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+  resultLogs ResultLog[]
+  @@map("webhook")
+}
+model ResultLog {
+  id          Int      @id @default(autoincrement())
+  webhookId   Int      @map("webhook_id")
+  sysMarketId String   @map("sys_market_id")
+  status      String // 'SUCCESS' | 'FAILED'
+  attempt     Int
+  response    Json
+  createdAt   DateTime @default(now()) @map("created_at")
+  webhook Webhook @relation(fields: [webhookId], references: [id])
+  @@map("result_log")
+}
+// ─── ENUMS ───────────────────────────────────────────────
+enum SportType {
+  Cricket          @map("cricket")
+  Soccer           @map("soccer")
+  Tennis           @map("tennis")
+  Kabaddi          @map("kabaddi")
+  MotorRacing      @map("motor_racing")
+  ESports          @map("e_sports")
+  Basketball       @map("basketball")
+  Handball         @map("handball")
+  Baseball         @map("baseball")
+  Greyhound        @map("greyhound")
+  HorseRacing      @map("horse_racing")
+  Volleyball       @map("volleyball")
+  Darts            @map("darts")
+  Futsal           @map("futsal")
+  TableTennis      @map("table_tennis")
+  Binary           @map("binary")
+  Politics         @map("politics")
+  IceHockey        @map("ice_hockey")
+  MMA              @map("mma")
+  Rugby            @map("rugby")
+  MultiMarkets     @map("multi_markets")
+  Badminton        @map("badminton")
+  Snooker          @map("snooker")
+  AmericanFootball @map("american_football")
+  Other            @map("other")
+  @@map("sport_type")
+}
+enum StatusType {
+  Upcoming    @map("upcoming")
+  Live        @map("live")
+  Finished    @map("finished")
+  Cancelled   @map("cancelled")
+  Open        @map("open")
+  Closed      @map("closed")
+  Void        @map("void")
+  Active      @map("active")
+  Inactive    @map("inactive")
+  Suspended   @map("suspended")
+  BallRunning @map("ball_running")
+  @@map("status_type")
+}
+enum GameTypeCategory {
+  Sports     @map("sport")
+  Casino     @map("casino")
+  Sportsbook @map("sport_book")
+  @@map("game_type_category")
+}
+model SportsProvider {
+  id        Int      @id @default(autoincrement()) @map("id")
+  name      String   @unique @map("name")
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  competitions    Competition[]
+  events          Event[]
+  markets         Market[]
+  fancies         Fancy[]
+  controls        ProviderSportControl[]
+  ProviderConfig  ProviderConfig[]
+  providerSports  ProviderSportMap[]
+  primaryEvents   ProviderEventMap[]     @relation("PrimaryProviderEventMap")
+  secondaryEvents ProviderEventMap[]     @relation("SecondaryProviderEventMap")
+  @@map("sports_provider")
+}
+model ProviderSportMap {
+  id         Int       @id @default(autoincrement())
+  providerId Int       @map("provider_id")
+  sport      SportType @map("sport")
+  externalId String    @map("external_id")
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt  DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  provider SportsProvider @relation(fields: [providerId], references: [id])
+  @@unique([providerId, sport])
+  @@map("provider_sport_map")
+}
+// ─── COMPETITION ──────────────────────────────────────────
+model Competition {
+  id          Int        @id @default(autoincrement()) @map("id")
+  providerId  Int        @map("provider_id")
+  externalId  String     @map("external_id")
+  name        String     @map("name")
+  sport       SportType  @map("sport")
+  marketCount Int        @map("market_count")
+  startDate   DateTime?  @map("start_date") @db.Timestamptz
+  endDate     DateTime?  @map("end_date") @db.Timestamptz
+  status      StatusType @map("status")
+  createdAt   DateTime   @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime   @updatedAt @map("updated_at") @db.Timestamptz
+  provider SportsProvider @relation(fields: [providerId], references: [id])
+  events   Event[]
+  @@unique([providerId, externalId])
+  @@index([sport])
+  @@map("competition")
+}
+model ProviderEventMap {
+  id                  Int       @id @default(autoincrement())
+  internalEventId     BigInt?   @map("internal_event_id")
+  primaryProviderId   Int       @map("primary_provider_id")
+  secondaryProviderId Int       @map("secondary_provider_id")
+  primaryEventId      String    @map("primary_event_id")
+  secondaryEventId    String    @map("secondary_event_id")
+  sport               SportType @map("sport")
+  createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  primaryProvider   SportsProvider @relation("PrimaryProviderEventMap", fields: [primaryProviderId], references: [id])
+  secondaryProvider SportsProvider @relation("SecondaryProviderEventMap", fields: [secondaryProviderId], references: [id])
+  internalEvent     Event?         @relation(fields: [internalEventId], references: [id])
+  @@unique([primaryProviderId, primaryEventId, secondaryProviderId, secondaryEventId])
+  @@map("provider_event_map")
+}
+// ─── EVENT ────────────────────────────────────────────────
+model Event {
+  id                BigInt     @id @default(autoincrement()) @map("id")
+  competitionId     Int?       @map("competition_id")
+  providerId        Int        @map("provider_id")
+  externalId        String     @map("external_id")
+  name              String     @map("name")
+  sport             SportType  @map("sport")
+  startTime         DateTime   @map("start_time") @db.Timestamptz
+  status            StatusType @map("status")
+  isFancy           Boolean    @default(false) @map("is_fancy")
+  isBookmaker       Boolean    @default(false) @map("is_bookmaker")
+  isPopular         Boolean    @default(false) @map("is_popular")
+  isResultDecleared Boolean    @default(false) @map("is_result_decleared")
+  createdAt         DateTime   @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime   @updatedAt @map("updated_at") @db.Timestamptz
+  provider         SportsProvider     @relation(fields: [providerId], references: [id])
+  competition      Competition?       @relation(fields: [competitionId], references: [id])
+  markets          Market[]
+  fancies          Fancy[]
+  ProviderEventMap ProviderEventMap[]
+  @@unique([providerId, externalId])
+  @@index([sport, status])
+  @@map("event")
+}
+// ─── MARKET ───────────────────────────────────────────────
+model Market {
+  id                  BigInt     @id @default(autoincrement()) @map("id")
+  eventId             BigInt     @map("event_id")
+  providerId          Int        @map("provider_id")
+  externalId          String     @map("external_id")
+  startTime           DateTime   @map("start_time") @db.Timestamptz
+  name                String     @map("name")
+  runner              Json       @map("runner")
+  status              StatusType @map("status")
+  inPlayMaxBetAmount  Decimal    @map("in_play_max_bet_amount")
+  inPlayMinBetAmount  Decimal    @map("in_play_min_bet_amount")
+  offPlayMaxBetAmount Decimal    @map("off_play_max_bet_amount")
+  offPlayMinBetAmount Decimal    @map("off_play_min_bet_amount")
+  potentialProfit     Decimal    @map("potential_profit")
+  createdAt           DateTime   @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime   @updatedAt @map("updated_at") @db.Timestamptz
+  event    Event          @relation(fields: [eventId], references: [id])
+  provider SportsProvider @relation(fields: [providerId], references: [id])
+  @@unique([providerId, externalId, eventId])
+  @@map("market")
+}
+// ─── FANCY ────────────────────────────────────────────────
+model Fancy {
+  id           BigInt     @id @default(autoincrement()) @map("id")
+  eventId      BigInt     @map("event_id")
+  providerId   Int        @map("provider_id")
+  externalId   String     @map("external_id")
+  name         String     @map("name")
+  type         String     @map("type") // session / premium / etc.
+  runner       Json       @map("runner")
+  status       StatusType @map("status")
+  maxBetAmount Decimal    @map("max_bet_amount")
+  minBetAmount Decimal    @map("min_bet_amount")
+  createdAt    DateTime   @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime   @updatedAt @map("updated_at") @db.Timestamptz
+  event    Event          @relation(fields: [eventId], references: [id])
+  provider SportsProvider @relation(fields: [providerId], references: [id])
+  @@unique([providerId, externalId])
+  @@map("fancy")
+}
+// ─── SPORT ENABLE/DISABLE PER PROVIDER ────────────────────
+model ProviderSportControl {
+  id         Int       @id @default(autoincrement()) @map("id")
+  providerId Int       @map("provider_id")
+  sport      SportType @map("sport")
+  isEnabled  Boolean   @default(true) @map("is_enabled")
+  updatedAt  DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  provider SportsProvider @relation(fields: [providerId], references: [id])
+  @@unique([providerId, sport])
+  @@map("provider_sport_control")
+}
+// ─── DEFAULT PROVIDER CONFIG ──────────────────────────────
+model ProviderConfig {
+  id                Int      @id @default(autoincrement())
+  defaultProviderId Int      @map("default_provider_id")
+  updatedAt         DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  defaultProvider SportsProvider @relation(fields: [defaultProviderId], references: [id])
+  @@map("provider_config")
+}
