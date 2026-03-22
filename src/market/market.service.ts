@@ -6,16 +6,22 @@ import { StatusType } from '@prisma/client';
 export class MarketService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getMarketsByEvent(eventId: number) {
-    const markets = await this.prisma.market.findMany({
+  async getMarketsByEvent(eventId: string) {
+    const normalizedEventId = String(eventId);
+
+    let markets = await this.prisma.market.findMany({
       where: {
-        eventId: BigInt(eventId),
+        event: {
+          externalId: normalizedEventId,
+        },
         status: StatusType.Active,
       },
       orderBy: {
         createdAt: 'desc',
       },
     });
+
+
 
     return markets.map((m) => {
       const runners = this.parseRunners(m.runner);
@@ -24,7 +30,7 @@ export class MarketService {
         marketId: m.externalId,
         marketName: m.name,
         status: m.status,
-        inPlay: true, // you can improve later using event status
+        inPlay: true,
         totalMatched: 0,
         runners,
       };
@@ -37,9 +43,7 @@ export class MarketService {
     try {
       // If already object
       const runners =
-        typeof runnerJson === 'string'
-          ? JSON.parse(runnerJson)
-          : runnerJson;
+        typeof runnerJson === 'string' ? JSON.parse(runnerJson) : runnerJson;
 
       return runners.map((r: any) => ({
         selectionId: r.selectionId?.toString() || '',

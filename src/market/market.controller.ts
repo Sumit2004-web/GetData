@@ -22,9 +22,7 @@ export class MarketController {
     description: 'List of markets',
     type: [MarketResponseDto],
   })
-  async getMarkets(
-    @Param('eventId', ParseIntPipe) eventId: number,
-  ) {
+  async getMarkets(@Param('eventId') eventId: string) {
     return this.marketService.getMarketsByEvent(eventId);
   }
 }

@@ -13,7 +13,9 @@ export class EventController {
   // Get events with competition details by original competition ID
   @Get('event-list/:competitionId')
   @Throttle({ default: { limit: 10, ttl: 60 } })
-  @ApiOperation({ summary: 'Get events by competitionId combine data of event & competitions' })
+  @ApiOperation({
+    summary: 'Get events by competitionId combine data of event & competitions',
+  })
   @ApiParam({
     name: 'competitionId',
     example: '12233784',
@@ -29,7 +31,9 @@ export class EventController {
   // Get all events with competition details by sport ID
   @Get('all-events/:sportId')
   @Throttle({ default: { limit: 10, ttl: 60 } })
-  @ApiOperation({ summary: 'Get events by sportId combine data of event & competitions' })
+  @ApiOperation({
+    summary: 'Get events by sportId combine data of event & competitions',
+  })
   @ApiParam({
     name: 'sportId',
     example: '1',

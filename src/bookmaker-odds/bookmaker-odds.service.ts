@@ -30,7 +30,7 @@ export class BookmakerOddsService {
 
     return {
       marketName: 'Bookmaker',
-      eventID: data.length ? data[0].EventID ?? '' : '',
+      eventID: data.length ? (data[0].EventID ?? '') : '',
       data,
     };
   }
@@ -50,7 +50,10 @@ export class BookmakerOddsService {
 
       return parsed;
     } catch (err) {
-      this.logger.warn(`Failed to parse redis value for marketId=${marketId}`, err?.message);
+      this.logger.warn(
+        `Failed to parse redis value for marketId=${marketId}`,
+        err?.message,
+      );
       return null;
     }
   }

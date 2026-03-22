@@ -10,10 +10,10 @@ class LimitsDto {
 }
 
 class StatusDto {
-  @ApiProperty({ example: "" })
+  @ApiProperty({ example: '' })
   gameStatus: string;
 
-  @ApiProperty({ example: "" })
+  @ApiProperty({ example: '' })
   gtStatus: string;
 }
 
@@ -24,10 +24,10 @@ class MetaDto {
   @ApiProperty({ example: 30 })
   priority: number;
 
-  @ApiProperty({ example: "wpmarket" })
+  @ApiProperty({ example: 'wpmarket' })
   marketName: string;
 
-  @ApiProperty({ example: "2026-03-18T15:11:12.000Z" })
+  @ApiProperty({ example: '2026-03-18T15:11:12.000Z' })
   updatedAt: string;
 
   @ApiProperty({ example: 1773826872966 })
@@ -44,7 +44,7 @@ export class SessionResponseDto {
   @ApiProperty()
   runnerName: string;
 
-  @ApiProperty({ example: "session" })
+  @ApiProperty({ example: 'session' })
   type: string;
 
   @ApiProperty({ example: true })

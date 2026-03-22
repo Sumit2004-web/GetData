@@ -61,7 +61,6 @@ export class UsersService {
 
   async isEmailExist(email: string, excludeUserId?: number): Promise<boolean> {
     return (
-  
       (await this.prisma.user.count({
         where: {
           email: email.toLowerCase(),
@@ -93,7 +92,6 @@ export class UsersService {
     mobile: string,
     excludeUserId?: number,
   ): Promise<boolean> {
-    
     return (
       (await this.prisma.user.count({
         where: {

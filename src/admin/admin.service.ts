@@ -12,7 +12,12 @@ import {
   getAccessGuardCacheKey,
 } from '@Common';
 import { PrismaService } from '../prisma';
-import { Admin, AdminMeta, AdminStatus, Prisma } from '../generated/prisma/client';
+import {
+  Admin,
+  AdminMeta,
+  AdminStatus,
+  Prisma,
+} from '../generated/prisma/client';
 
 @Injectable()
 export class AdminService {

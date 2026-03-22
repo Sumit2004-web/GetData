@@ -20,5 +20,4 @@ export class FancyController {
   async getFancyByEvent(@Param('eventId') eventId: string) {
     return this.fancyService.getFancyByEventId(eventId);
   }
-
 }

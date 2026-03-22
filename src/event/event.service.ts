@@ -8,34 +8,23 @@ export class EventService {
   constructor(private readonly prisma: PrismaService) {}
 
   async getEventsByCompetition(externalCompetitionId: string) {
-    const competition =
-      await this.findCompetitionByExternalIdWithEvents(externalCompetitionId);
+    const competition = await this.findCompetitionByExternalIdWithEvents(
+      externalCompetitionId,
+    );
 
-    if (!competition) {
+    if (!competition || !competition.events?.length) {
       return [];
     }
 
-    const events = await this.prisma.event.findMany({
-      where: {
-        competitionId: competition.id,
-      },
-      include: {
-        markets: true,
-      },
-      orderBy: {
-        startTime: 'asc',
-      },
-    });
-
-    return events.map((e) => ({
+    return competition.events.map((e) => ({
       event: {
-        id: e.externalId, //  using externalId as required
+        id: e.externalId,
         name: e.name,
         countryCode: 'IN',
         timezone: 'GMT',
         openDate: e.startTime.toISOString(),
       },
-      marketCount: e.markets.length,
+      marketCount: Number(e._count?.markets ?? 0),
       scoreboard_id: '',
       selections: null,
       liability_type: '0',
@@ -51,18 +40,9 @@ export class EventService {
       return [];
     }
 
-    const events = await this.prisma.event.findMany({
-      where: {
-        competitionId: competition.id,
-      },
-      orderBy: {
-        startTime: 'asc',
-      },
-    });
-
     return this.mapCompetitionWithEvents({
       ...competition,
-      events,
+      events: competition.events ?? [],
     });
   }
 
@@ -151,6 +131,18 @@ export class EventService {
         externalId,
       },
       include: {
+        events: {
+          orderBy: {
+            startTime: 'asc',
+          },
+          include: {
+            _count: {
+              select: {
+                markets: true,
+              },
+            },
+          },
+        },
         _count: {
           select: {
             events: true,

@@ -14,7 +14,11 @@ import { PrismaModule } from './prisma';
 import { AuthModule } from './auth';
 import { RedisModule } from './redis';
 import { CompetitionModule } from './competition';
-import { ThrottlerGuard, ThrottlerModule, ThrottlerStorageService } from '@nestjs/throttler';
+import {
+  ThrottlerGuard,
+  ThrottlerModule,
+  ThrottlerStorageService,
+} from '@nestjs/throttler';
 import { EventModule } from './event';
 import { MarketModule } from './market';
 import { MarketOddsModule } from './market-odds/market-odds.module';
@@ -59,7 +63,7 @@ import { FancyModule } from './fancy';
     MarketModule,
     MarketOddsModule,
     BookmakerOddsModule,
-    FancyModule
+    FancyModule,
   ],
   controllers: [AppController],
   providers: [
@@ -79,11 +83,10 @@ import { FancyModule } from './fancy';
       provide: APP_INTERCEPTOR,
       useClass: AppCacheInterceptor,
     },
-   {
+    {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
     },
-
   ],
 })
 export class AppModule {}

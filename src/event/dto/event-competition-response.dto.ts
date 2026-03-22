@@ -38,7 +38,10 @@ class MatchItemDto {
 }
 
 export class EventWithCompetitionDto {
-  @ApiProperty({ type: Object, example: { id: '11365612', name: 'Test Matches' } })
+  @ApiProperty({
+    type: Object,
+    example: { id: '11365612', name: 'Test Matches' },
+  })
   competition: { id: string; name: string };
 
   @ApiProperty({ example: '' })

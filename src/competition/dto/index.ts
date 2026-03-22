@@ -1,1 +1,1 @@
-export * from "./CompetitionResponse.dto"
+export * from './CompetitionResponse.dto';

@@ -1,12 +1,12 @@
-import { SessionResponseDto } from "../dto/fancy-response.dto";
+import { SessionResponseDto } from '../dto/fancy-response.dto';
 
-export function transformFancyMarket(data: any): SessionResponseDto{
+export function transformFancyMarket(data: any): SessionResponseDto {
   return {
     marketId: data.marketId,
     selectionId: data.SelectionId,
     runnerName: data.RunnerName?.trim(),
     type: data.gtype,
-    isBallSession: data.ballsess === "1",
+    isBallSession: data.ballsess === '1',
 
     back: [
       { price: +data.BackPrice1, size: +data.BackSize1 },
@@ -26,8 +26,8 @@ export function transformFancyMarket(data: any): SessionResponseDto{
     },
 
     status: {
-      gameStatus: data.GameStatus || "",
-      gtStatus: data.gtstatus || "",
+      gameStatus: data.GameStatus || '',
+      gtStatus: data.gtstatus || '',
     },
 
     meta: {

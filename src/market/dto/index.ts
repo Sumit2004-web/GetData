@@ -1,1 +1,1 @@
-export * from './market.dto'
+export * from './market.dto';

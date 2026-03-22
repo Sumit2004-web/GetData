@@ -11,11 +11,17 @@ export class BookmakerOddsController {
 
   @Get()
   @Throttle({ default: { limit: 20, ttl: 60000 } })
-  @ApiOperation({ summary: 'Get bookmaker odds (supports single or comma-separated marketIds)' })
+  @ApiOperation({
+    summary:
+      'Get bookmaker odds (supports single or comma-separated marketIds)',
+  })
   @ApiQuery({ name: 'marketId', example: '5551.7709831522825_bm1' })
   @ApiResponse({ status: 200, type: BookmakerOddsResponseDto })
   async getOdds(@Query('marketId') marketId: string) {
-    const marketIds = (marketId || '').split(',').map((m) => m.trim()).filter(Boolean);
+    const marketIds = (marketId || '')
+      .split(',')
+      .map((m) => m.trim())
+      .filter(Boolean);
     return this.service.getOddsForMarketIds(marketIds);
   }
 
