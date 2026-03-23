@@ -16,6 +16,9 @@ export class MarketService {
         },
         status: StatusType.Active,
       },
+      include: {
+        event: true,
+      },
       orderBy: {
         createdAt: 'desc',
       },
@@ -30,7 +33,7 @@ export class MarketService {
         marketId: m.externalId,
         marketName: m.name,
         status: m.status,
-        inPlay: true,
+        inPlay: m.event?.status === StatusType.Live,
         totalMatched: 0,
         runners,
       };
