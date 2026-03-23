@@ -76,6 +76,11 @@ export class EventService {
       },
       include: {
         events: {
+          where: {
+            status: {
+              notIn: [StatusType.Finished, StatusType.Cancelled],
+            },
+          },
           orderBy: {
             startTime: 'asc',
           },
@@ -132,6 +137,11 @@ export class EventService {
       },
       include: {
         events: {
+          where: {
+            status: {
+              notIn: [StatusType.Finished, StatusType.Cancelled],
+            },
+          },
           orderBy: {
             startTime: 'asc',
           },
