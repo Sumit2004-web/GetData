@@ -2,12 +2,15 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { Competition, Event, SportType, StatusType } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { BETFAIR_SPORT_ID_MAP } from '../common/constants/sportIdMap';
+import { ValidateIpService } from 'src/common/providers/validateIp.service';
 
 @Injectable()
 export class EventService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService,
+    private readonly validateIpService:ValidateIpService
+  ) {}
 
-  async getEventsByCompetition(externalCompetitionId: string) {
+  async getEventsByCompetition(externalCompetitionId: string,ip:string) {
     const competition = await this.findCompetitionByExternalIdWithEvents(
       externalCompetitionId,
     );
@@ -15,6 +18,10 @@ export class EventService {
     if (!competition || !competition.events?.length) {
       return [];
     }
+
+    const Sport_Id=BETFAIR_SPORT_ID_MAP[competition.sport]
+    
+    await this.validateIpService.validateIpAccess(ip,competition.providerId,Sport_Id)
 
     return competition.events.map((e) => ({
       event: {
@@ -32,7 +39,7 @@ export class EventService {
     }));
   }
 
-  async getEventsWithCompetitions(competitionId: string) {
+  async getEventsWithCompetitions(competitionId: string, ip: string) {
     const competition =
       await this.findCompetitionByExternalIdWithEvents(competitionId);
 
@@ -40,13 +47,20 @@ export class EventService {
       return [];
     }
 
+    const sportId = BETFAIR_SPORT_ID_MAP[competition.sport];
+    await this.validateIpService.validateIpAccess(
+      ip,
+      competition.providerId,
+      sportId,
+    );
+
     return this.mapCompetitionWithEvents({
       ...competition,
       events: competition.events ?? [],
     });
   }
 
-  async getAllEvents(sportId: string) {
+  async getAllEvents(sportId: string, ip: string) {
     const parsedSportId = Number(sportId);
     if (Number.isNaN(parsedSportId)) {
       throw new BadRequestException('Invalid sportId');
@@ -67,6 +81,12 @@ export class EventService {
     if (!defaultConfig?.defaultProvider) {
       throw new BadRequestException('Default provider not set');
     }
+
+    await this.validateIpService.validateIpAccess(
+      ip,
+      defaultConfig.defaultProvider.id,
+      parsedSportId,
+    );
 
     const competitions = await this.prisma.competition.findMany({
       where: {

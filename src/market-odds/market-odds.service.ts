@@ -1,15 +1,48 @@
-import { Injectable } from '@nestjs/common';
+import { ForbiddenException, Injectable } from '@nestjs/common';
 import { RedisService } from '../redis/redis.service';
+import { BETFAIR_SPORT_ID_MAP } from 'src/common/constants/sportIdMap';
+import { PrismaService } from 'src/prisma';
+import { ValidateIpService } from 'src/common/providers/validateIp.service';
 
 @Injectable()
 export class MarketOddsService {
-  constructor(private readonly redisService: RedisService) {}
+  constructor(private readonly redisService: RedisService,
+    private readonly prisma:PrismaService,
+    private readonly validateIpService:ValidateIpService
+  ) {}
 
-  async getMarketOdds(matchId: string) {
+  async getMarketOdds(matchId: string,ip:string) {
+
+
+  // //  Find event
+  // const event = await this.prisma.event.findFirst({
+  //   where: { externalId: matchId },
+  //   include: { competition: true },
+  // });
+
+  // if (!event || !event.competition) {
+  //   return [];
+  // }
+
+  // //  Get sportId
+  // const sport = event.competition.sport;
+  // const providerId = event.competition.providerId;
+
+  // const sportId = BETFAIR_SPORT_ID_MAP[sport];
+
+  // //   Validate access
+  // await this.validateIpService.validateIpAccess(
+  //   ip,
+  //   providerId,
+  //   sportId
+  // );
+
+
+
     const redis = this.redisService.client;
     const matchIdStr = String(matchId);
 
-    // Step 1: try to find relevant keys in Redis (new and old patterns)
+    //  try to find relevant keys in Redis
     const patterns = [
       `marketOdds:*:sr:match:${matchIdStr}:*`,
       `marketOdds:*:sr:match:${matchIdStr}`,
@@ -63,11 +96,31 @@ export class MarketOddsService {
     return result;
   }
 
-  async getMarketById(marketId: string) {
+  async getMarketById(marketId: string,ip:string) {
+
     const raw = await this.getRawMarketData(marketId);
     if (!raw) {
-      throw new Error('Market not found');
+      throw new Error(`Market not found for marketId ${marketId}`);
     }
+   
+    //  Find event using matchId
+  // const event = await this.prisma.event.findFirst({
+  //   where: { externalId: String(raw.matchId) },
+  //   include: { competition: true },
+  // });
+
+  // if (!event || !event.competition) {
+  //   throw new ForbiddenException('Invalid event access');
+  // }
+
+  // const sportId = BETFAIR_SPORT_ID_MAP[event.competition.sport];
+
+  // await this.validateIpService.validateIpAccess(
+  //   ip,
+  //   event.competition.providerId,
+  //   sportId
+  // );
+
 
     return {
       marketId: raw.marketId,
@@ -84,48 +137,80 @@ export class MarketOddsService {
     };
   }
 
-  async getMarketOddsByIds(marketIds: string[]) {
-    const results = [];
-    for (const id of marketIds) {
-      const raw = await this.getRawMarketData(id);
-      if (!raw) continue;
-      results.push(raw);
-    }
-    return results;
+ async getMarketOddsByIds(marketIds: string[], ip: string) {
+  const results = [];
+
+  for (const id of marketIds) {
+    const raw = await this.getRawMarketData(id);
+    if (!raw) continue;
+
+    // //Find event using matchId
+    // const event = await this.prisma.event.findFirst({
+    //   where: { externalId: String(raw.matchId) },
+    //   include: { competition: true },
+    // });
+
+    // if (!event || !event.competition) {
+    //   continue; // or throw error if strict
+    // }
+
+    // //  Get sport and  provider
+    // const sport = event.competition.sport;
+    // const providerId = event.competition.providerId;
+
+    // const sportId = BETFAIR_SPORT_ID_MAP[sport];
+
+    // // Validate IP access
+    // await this.validateIpService.validateIpAccess(
+    //   ip,
+    //   providerId,
+    //   sportId
+    // );
+
+    results.push({
+      marketId: raw.marketId,
+      marketName: raw.marketName,
+      matchId: raw.matchId,
+      status: raw.status,
+      inplay: raw.inplay,
+      runners: (raw.runners || []).map((r: any) => ({
+        selectionId: r.selectionId,
+        runnerName: r.runnerName,
+        back: r.back || [],
+        lay: r.lay || [],
+      })),
+    });
   }
+
+  return results;
+}
 
   private async getRawMarketData(marketId: string) {
     const redis = this.redisService.client;
+    const normalizedMarketId = String(marketId).trim();
 
     // Step 1: find all market keys
     const keys = await redis.keys(`marketOdds:*`);
 
-    let matchedKey: string | null = null;
-
     for (const key of keys) {
-      // Extract last part of key
-      const parts = key.split(':');
+      const value = await redis.get(key);
+      if (!value) {
+        continue;
+      }
 
-      // MarketId starts after matchId → join remaining
-      const extractedMarketId = parts.slice(5).join(':');
+      try {
+        const parsed = JSON.parse(value);
+        const data = parsed?.data ?? parsed;
 
-      if (extractedMarketId === marketId) {
-        matchedKey = key;
-        break;
+        if (String(data?.marketId).trim() === normalizedMarketId) {
+          return data;
+        }
+      } catch (error) {
+        continue;
       }
     }
 
-    if (!matchedKey) {
-      return null;
-    }
-
-    const value = await redis.get(matchedKey);
-    if (!value) {
-      return null;
-    }
-
-    const parsed = JSON.parse(value);
-    return parsed?.data ?? parsed;
+    return null;
   }
 
   //  Extract clean marketId (important)

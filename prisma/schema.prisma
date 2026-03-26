@@ -350,3 +350,44 @@ model ProviderConfig {
   defaultProvider SportsProvider @relation(fields: [defaultProviderId], references: [id])
   @@map("provider_config")
 }
+
+enum ApiUserStatus{
+  Active @map("active")
+  Inactive @map("inactive")
+  Blocked @map("blocked")
+  @@map("api_user_status")
+}
+
+model PlatformSuscriber{
+  id             Int             @id @default(autoincrement())
+  name          String
+  ipAddress     String          @map("ip_address")
+  
+  status        ApiUserStatus   @default(Active)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  
+  permissions ApiPermissions?
+
+  @@map("platform_subscriber")
+}
+
+model ApiPermissions{
+  id                Int   @id @default(autoincrement())
+  userId            Int   @unique    @map("user_id")
+  user              PlatformSuscriber @relation(fields: [userId],references: [id])
+
+  sportIds          Int[]    @map("sport_ids")        
+  providerIds       Int[]    @map("provider_ids")     
+
+  canViewEvents     Boolean @default(true)
+  canViewMarkets    Boolean @default(true)
+  canViewOdds       Boolean @default(true)
+  canViewSessions   Boolean @default(true)
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@map("api_permission")
+
+}

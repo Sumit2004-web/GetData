@@ -24,6 +24,7 @@ import { MarketModule } from './market';
 import { MarketOddsModule } from './market-odds/market-odds.module';
 import { BookmakerOddsModule } from './bookmaker-odds/bookmaker-odds.module';
 import { FancyModule } from './fancy';
+import { PlatformSuscriberModule } from './platform-suscriber';
 
 @Module({
   imports: [
@@ -64,6 +65,7 @@ import { FancyModule } from './fancy';
     MarketOddsModule,
     BookmakerOddsModule,
     FancyModule,
+    PlatformSuscriberModule,
   ],
   controllers: [AppController],
   providers: [

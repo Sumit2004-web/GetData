@@ -123,3 +123,4 @@ export interface Context {
 export interface AuthenticatedRequest extends Request {
   readonly user: AuthenticatedUser;
 }
+

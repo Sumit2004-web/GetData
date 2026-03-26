@@ -1,13 +1,21 @@
-import { Controller, Get, Body, Param, ParseIntPipe } from '@nestjs/common';
-import { CompetitionService } from './competition.service';
+import { Request } from 'express';
+import { Controller, Get, Body, Param, ParseIntPipe, Req, BadRequestException } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
+import { BaseController } from '@Common';
 import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { CompetitionResponseDto } from './dto';
-import { Throttle } from '@nestjs/throttler';
+import { CompetitionService } from './competition.service';
+
 
 @ApiTags('Competition')
 @Controller('competition')
-export class CompetitionController {
-  constructor(private readonly competitionService: CompetitionService) {}
+export class CompetitionController extends BaseController {
+  constructor(
+    private readonly competitionService: CompetitionService,
+  ) {
+    super();
+  }
+
   @Get('/:sportId')
   @Throttle({ default: { limit: 5, ttl: 60000 } }) // 5 requests per minute per IP
   @ApiOperation({
@@ -23,9 +31,19 @@ export class CompetitionController {
     description: 'list of competitions',
     type: [CompetitionResponseDto],
   })
-  getAllCompetition(@Param('sportId', ParseIntPipe) sportId: number) {
+  async getAllCompetition(
+    @Param('sportId', ParseIntPipe) sportId: number,
+    @Req() req: Request,
+  ) {
+    const ip = this.getIp(req);
+    console.log(ip)
+    if (!ip) {
+      throw new BadRequestException('Unable to determine client IP address');
+    }
+
     return this.competitionService.getCompetitionsBySportDefaultProvider(
       sportId,
+      ip,
     );
   }
 }

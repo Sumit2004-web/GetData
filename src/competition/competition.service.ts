@@ -1,13 +1,15 @@
-import { Injectable } from '@nestjs/common';
+import {  ForbiddenException, Injectable } from '@nestjs/common';
 import { SportType, StatusType } from '@prisma/client';
 import { BETFAIR_SPORT_ID_MAP } from 'src/common/constants/sportIdMap';
+import { ValidateIpService } from 'src/common/providers/validateIp.service';
 import { PrismaService } from 'src/prisma';
 
 @Injectable()
 export class CompetitionService {
-  constructor(private readonly prisma: PrismaService) {}
-
-  async getCompetitionsBySportDefaultProvider(sportId: number) {
+  constructor(private readonly prisma: PrismaService,
+    private readonly validateIpService:ValidateIpService
+  ) {}
+  async getCompetitionsBySportDefaultProvider(sportId: number, ip: string) {
     const sportName = Object.keys(BETFAIR_SPORT_ID_MAP).find(
       (key) => BETFAIR_SPORT_ID_MAP[key] == sportId,
     );
@@ -18,6 +20,10 @@ export class CompetitionService {
     if (!defaultConfig?.defaultProvider) {
       throw new Error('Default provider not set');
     }
+
+    // Validate IP access before returning data
+    await this.validateIpService.validateIpAccess(ip, defaultConfig.defaultProvider.id, sportId);
+
     console.log('sportName', sportName);
     const competitions = await this.prisma.competition.findMany({
       where: {
